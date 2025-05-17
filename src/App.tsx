@@ -246,6 +246,16 @@ const App: React.FC = () => {
     // **Accumulate Score Here**
     setScore((prevScore) => prevScore + currentGrid[newRow][newCol].score);
 
+    // **Reset Tile Score After Collection**
+    const updatedGrid = currentGrid.map((row) =>
+      row.map((cell) => ({ ...cell }))
+    );
+
+    updatedGrid[newRow][newCol] = { ...updatedGrid[newRow][newCol], score: 0 };
+
+    // Update Grid State
+    setGrid(updatedGrid);
+
     // Create a new grid that includes all previous path markers
     const newGrid: Tile[][] = JSON.parse(JSON.stringify(currentGrid));
 
@@ -266,6 +276,12 @@ const App: React.FC = () => {
     if (newRow === 0 && newCol === endCol) {
       console.log("Reached the end!");
       setDebugInfo("Reached the end!");
+      setIsExecuting(false);
+      return;
+    }
+
+    if (stepIndex >= path.length - 1) {
+      setDebugInfo("You lost! Didn't reach the goal.");
       setIsExecuting(false);
       return;
     }
