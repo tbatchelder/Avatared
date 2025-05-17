@@ -20,6 +20,7 @@ const App: React.FC = () => {
   const [isExecuting, setIsExecuting] = useState<boolean>(false);
   const [currentPathIndex, setCurrentPathIndex] = useState<number>(0);
   const executionTimerRef = useRef<number | null>(null);
+  const [score, setScore] = useState(0);
 
   // Generate grid on initial load
   useEffect(() => {
@@ -48,13 +49,20 @@ const App: React.FC = () => {
   const generateGrid = () => {
     const grid: Tile[][] = Array(GRID_SIZE)
       .fill(null)
-      .map(() => Array(GRID_SIZE).fill({ type: "empty" }));
+      .map(() =>
+        Array(GRID_SIZE)
+          .fill(null)
+          .map(() => ({
+            type: "empty",
+            score: [5, 10, 15, 20][Math.floor(Math.random() * 4)],
+          }))
+      );
 
     // Lock Start & End Positions
     const startCol = Math.floor(Math.random() * GRID_SIZE);
     const endCol = Math.floor(Math.random() * GRID_SIZE);
-    grid[GRID_SIZE - 1][startCol] = { type: "start" };
-    grid[0][endCol] = { type: "end" };
+    grid[GRID_SIZE - 1][startCol] = { type: "start", score: 0 };
+    grid[0][endCol] = { type: "end", score: 0 };
 
     // Function to check if a path exists using BFS
     const isPathValid = () => {
@@ -98,7 +106,10 @@ const App: React.FC = () => {
       // Reset grid except start/end
       for (let row = 1; row < GRID_SIZE - 1; row++) {
         for (let col = 0; col < GRID_SIZE; col++) {
-          grid[row][col] = { type: "empty" };
+          grid[row][col] = {
+            type: "empty",
+            score: [5, 10, 15, 20][Math.floor(Math.random() * 4)],
+          };
         }
       }
 
@@ -108,7 +119,7 @@ const App: React.FC = () => {
         const row = Math.floor(Math.random() * (GRID_SIZE - 2)) + 1;
         const col = Math.floor(Math.random() * GRID_SIZE);
         if (grid[row][col].type === "empty") {
-          grid[row][col] = { type: "obstacle" };
+          grid[row][col] = { type: "obstacle", score: 0 };
           obstaclesPlaced++;
         }
       }
@@ -163,7 +174,10 @@ const App: React.FC = () => {
     for (let row = 0; row < GRID_SIZE; row++) {
       for (let col = 0; col < GRID_SIZE; col++) {
         if (newGrid[row][col].type === "path") {
-          newGrid[row][col] = { type: "empty" };
+          newGrid[row][col] = {
+            type: "empty",
+            score: [5, 10, 15, 20][Math.floor(Math.random() * 4)],
+          };
         }
       }
     }
@@ -229,6 +243,9 @@ const App: React.FC = () => {
       return;
     }
 
+    // **Accumulate Score Here**
+    setScore((prevScore) => prevScore + currentGrid[newRow][newCol].score);
+
     // Create a new grid that includes all previous path markers
     const newGrid: Tile[][] = JSON.parse(JSON.stringify(currentGrid));
 
@@ -237,7 +254,7 @@ const App: React.FC = () => {
       newGrid[newRow][newCol].type !== "start" &&
       newGrid[newRow][newCol].type !== "end"
     ) {
-      newGrid[newRow][newCol] = { type: "path" };
+      newGrid[newRow][newCol] = { type: "path", score: 0 };
     }
 
     // Update the grid and player position in state
@@ -247,6 +264,7 @@ const App: React.FC = () => {
 
     // Check if reached the end
     if (newRow === 0 && newCol === endCol) {
+      console.log("Reached the end!");
       setDebugInfo("Reached the end!");
       setIsExecuting(false);
       return;
@@ -332,6 +350,7 @@ const App: React.FC = () => {
       {/* RIGHT SIDE: Status Updates */}
       <div style={{ width: "250px", padding: "10px" }}>
         <h2>Status</h2>
+        <p>Current Score: {score}</p>
         <p>Current Steps: {path.length}</p>
         <p>Path Index: {currentPathIndex}</p>
         <p>Debug: {debugInfo}</p>

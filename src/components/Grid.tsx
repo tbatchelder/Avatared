@@ -1,6 +1,9 @@
 import React from "react";
 
-export type Tile = { type: "start" | "end" | "path" | "empty" | "obstacle" };
+export type Tile = {
+  type: "start" | "end" | "path" | "obstacle" | "empty";
+  score: number;
+};
 
 interface GridProps {
   grid: Tile[][];
@@ -30,6 +33,12 @@ const Grid: React.FC<GridProps> = ({ grid, gridSize, playerPosition }) => {
               style={{
                 width: 40,
                 height: 40,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "14px",
+                fontWeight: "bold",
+                color: "#fff",
                 backgroundColor: isPlayerPosition
                   ? "purple" // Player position color
                   : cell.type === "start"
@@ -45,6 +54,9 @@ const Grid: React.FC<GridProps> = ({ grid, gridSize, playerPosition }) => {
                 position: "relative",
               }}
             >
+              {/* Add score display for non-obstacle tiles */}
+              {cell.type !== "obstacle" && cell.score > 0 ? cell.score : ""}
+
               {isPlayerPosition && (
                 <div
                   style={{
