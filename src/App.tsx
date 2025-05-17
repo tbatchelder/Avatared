@@ -515,11 +515,17 @@ const App: React.FC = () => {
     setPath((prevPath) => [...prevPath, direction]); // Append each move
   };
 
+  // Add debug state to help track what's happening
+  const [debugInfo, setDebugInfo] = useState<string>("");
+
   const executePath = () => {
     // Don't allow execution if already running
     if (isExecuting) return;
 
-    // Reset player position to start
+    console.log("Starting path execution with path:", path);
+    setDebugInfo(`Starting execution with ${path.length} steps`);
+
+    // Reset player position to start and path index
     setPlayerPosition({ row: GRID_SIZE - 1, col: startCol });
     setCurrentPathIndex(0);
     setIsExecuting(true);
@@ -535,20 +541,33 @@ const App: React.FC = () => {
     }
     setGrid(newGrid);
 
-    // Start the execution process
-    executeNextStep();
+    // Start the execution process with a clean grid - using a direct function call
+    // rather than relying on state updates to trigger the chain
+    setTimeout(() => {
+      movePlayer(newGrid, 0, { row: GRID_SIZE - 1, col: startCol });
+    }, 100);
   };
 
-  const executeNextStep = () => {
-    // If we've completed all steps or player position is null, stop execution
-    if (currentPathIndex >= path.length || !playerPosition) {
+  // Completely new implementation with direct parameter passing
+  const movePlayer = (
+    currentGrid: Tile[][],
+    stepIndex: number,
+    position: { row: number; col: number }
+  ) => {
+    // Check if we've completed all steps
+    if (stepIndex >= path.length) {
+      console.log("Path complete!");
+      setDebugInfo("Path complete!");
       setIsExecuting(false);
       return;
     }
 
-    const direction = path[currentPathIndex];
-    let newRow = playerPosition.row;
-    let newCol = playerPosition.col;
+    console.log(`Executing step ${stepIndex}: ${path[stepIndex]}`);
+    setDebugInfo(`Step ${stepIndex}: ${path[stepIndex]}`);
+
+    const direction = path[stepIndex];
+    let newRow = position.row;
+    let newCol = position.col;
 
     // Update position based on direction
     switch (direction) {
@@ -566,44 +585,54 @@ const App: React.FC = () => {
         break;
       default:
         // Invalid direction, skip to next step
-        setCurrentPathIndex((prev) => prev + 1);
-        executionTimerRef.current = window.setTimeout(executeNextStep, 500);
+        console.log("Invalid direction, skipping");
+        setDebugInfo(`Invalid direction: ${direction}`);
+        executionTimerRef.current = window.setTimeout(() => {
+          movePlayer(currentGrid, stepIndex + 1, position);
+        }, 500);
         return;
     }
 
+    // Create new position
+    const newPosition = { row: newRow, col: newCol };
+
     // Check if new position hits an obstacle
-    if (grid[newRow][newCol].type === "obstacle") {
-      // Hit an obstacle, stop execution
+    if (currentGrid[newRow][newCol].type === "obstacle") {
       console.log("Hit an obstacle at", newRow, newCol);
+      setDebugInfo(`Hit obstacle at ${newRow},${newCol}`);
+      setPlayerPosition(newPosition);
       setIsExecuting(false);
       return;
     }
 
-    // Update grid with path marker (unless it's the start or end)
-    const newGrid: Tile[][] = JSON.parse(JSON.stringify(grid));
+    // Create a new grid that includes all previous path markers
+    const newGrid: Tile[][] = JSON.parse(JSON.stringify(currentGrid));
+
+    // Mark the new position as path if it's not start or end
     if (
       newGrid[newRow][newCol].type !== "start" &&
       newGrid[newRow][newCol].type !== "end"
     ) {
       newGrid[newRow][newCol] = { type: "path" };
     }
-    setGrid(newGrid);
 
-    // Update player position
-    setPlayerPosition({ row: newRow, col: newCol });
+    // Update the grid and player position in state
+    setGrid(newGrid);
+    setPlayerPosition(newPosition);
+    setCurrentPathIndex(stepIndex);
 
     // Check if reached the end
     if (newRow === 0 && newCol === endCol) {
       console.log("Reached the end!");
+      setDebugInfo("Reached the end!");
       setIsExecuting(false);
       return;
     }
 
-    // Move to next step
-    setCurrentPathIndex((prev) => prev + 1);
-
-    // Schedule next step with a delay
-    executionTimerRef.current = window.setTimeout(executeNextStep, 500);
+    // Schedule next step with a delay, passing updated grid, increased index, and new position
+    executionTimerRef.current = window.setTimeout(() => {
+      movePlayer(newGrid, stepIndex + 1, newPosition);
+    }, 500);
   };
 
   return (
@@ -681,7 +710,8 @@ const App: React.FC = () => {
       <div style={{ width: "250px", padding: "10px" }}>
         <h2>Status</h2>
         <p>Current Steps: {path.length}</p>
-        <p>Glitches: ???</p>
+        <p>Path Index: {currentPathIndex}</p>
+        <p>Debug: {debugInfo}</p>
       </div>
     </div>
   );
