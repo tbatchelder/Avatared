@@ -1,0 +1,15 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(10, 40px);
+  width: 400px;
+  margin: 0 auto;
+  justify-content: center;
+}
+
+.grid-cell {
+  width: 40px;
+  height: 40px;
+  background-color: #222;
+  border: 1px solid #555;
+  /* Subtle border */
+}

@@ -1,0 +1,19 @@
+.path-box {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #333;
+  color: #fff;
+  font-size: 20px;
+  border: 1px solid #555;
+  cursor: pointer;
+  /* Secretly clickable */
+  transition: background-color 0.3s;
+}
+
+.path-box:hover {
+  background-color: #444;
+  /* Slight hover effect */
+}
