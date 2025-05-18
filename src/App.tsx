@@ -21,6 +21,11 @@ const App: React.FC = () => {
   const [currentPathIndex, setCurrentPathIndex] = useState<number>(0);
   const executionTimerRef = useRef<number | null>(null);
   const [score, setScore] = useState(0);
+  const [globalGlitchActive, setGlobalGlitchActive] = useState(false);
+  const [localGlitchActive, setLocalGlitchActive] = useState(false);
+  const [glitchProbability, setGlitchProbability] = useState(
+    Math.random() * 25
+  );
 
   // Generate grid on initial load
   useEffect(() => {
@@ -152,7 +157,16 @@ const App: React.FC = () => {
   };
 
   const addToPath = (direction: string) => {
-    setPath((prevPath) => [...prevPath, direction]); // Append each move
+    setPath((prevPath) => [...prevPath, direction]);
+
+    // Increase glitch probability by a random 0–25%
+    setGlitchProbability((prev) => prev + Math.random() * 25);
+
+    // Check if a glitch should occur
+    if (glitchProbability >= 100) {
+      triggerGlitch();
+      setGlitchProbability((prev) => prev - 100); // Reset after glitch
+    }
   };
 
   // Add debug state to help track what's happening
@@ -292,6 +306,156 @@ const App: React.FC = () => {
     }, 500);
   };
 
+  const globalErrors = [
+    { message: "💀 ERROR: SYSTEM FAILURE - RESTARTING...", baseChance: 10 },
+    {
+      message: "🔒 Access Denied. Unauthorized Activity Detected.",
+      baseChance: 15,
+    },
+    {
+      message: "❌ Critical System Error! Attempting Recovery...",
+      baseChance: 8,
+    },
+    {
+      message: "🌐 No Network Connection. Please check your router..",
+      baseChance: 5,
+    },
+    {
+      message: "💿 Filesystem Corrupt. Attempting Repair...",
+      baseChance: 9,
+    },
+    { message: "🔄 Rebooting in 3... 2... 1...", baseChance: 5 },
+    { message: "🛑 400 Bad Request. Invalid Input Detected.", baseChance: 12 },
+    {
+      message: "🔥 Overheating Warning! Emergency Shutdown Imminent.",
+      baseChance: 6,
+    },
+    { message: "❌ 404 Not Found. Grid Data Missing.", baseChance: 10 },
+    { message: "💾 Corrupt Data Detected. Repairing System...", baseChance: 7 },
+    { message: "⚠️ Unexpected Kernel Behavior Detected.", baseChance: 9 },
+  ];
+
+  const localErrors = [
+    { message: "⚠️ Avatar Sync Disrupted. Retrying...", baseChance: 20 },
+    { message: "🔄 Command Delay: Expect Slowed Execution.", baseChance: 10 },
+    { message: "❌ Unauthorized Avatar Input Detected.", baseChance: 8 },
+    {
+      message: "🔧 Calibration Failure: Resetting Avatar Position.",
+      baseChance: 15,
+    },
+    { message: "🚨 Routing Mismatch: Adjusting Trajectory.", baseChance: 12 },
+    { message: "🌀 Sync Error: Movement Unpredictable.", baseChance: 10 },
+    { message: "❌ Avatar Not Recognized. Confirm Identity.", baseChance: 5 },
+    { message: "💾 Pathway Data Unstable. Recalibrating...", baseChance: 8 },
+    { message: "⏳ Warning: Signal Delay Expected.", baseChance: 15 },
+    {
+      message: "🎲 Routing Mismatch. Recalculating New Directions...",
+      baseChance: 12,
+    },
+    {
+      message: "🔺 Response Time Degraded. Adjusting Synchronization...",
+      baseChance: 12,
+    },
+  ];
+
+  // Function to randomly assign impact type (Path, Score, or Grid)
+  const getRandomImpactType = () => {
+    const impactTypes = ["Path", "Score", "Grid"];
+    return impactTypes[Math.floor(Math.random() * impactTypes.length)];
+  };
+
+  // Function to retrieve a random error with impact type
+  const getRandomGlobalError = () => {
+    const error = globalErrors[Math.floor(Math.random() * globalErrors.length)];
+    return { ...error, impactType: getRandomImpactType() };
+  };
+
+  const getRandomLocalError = () => {
+    const error = localErrors[Math.floor(Math.random() * localErrors.length)];
+    return { ...error, impactType: getRandomImpactType() };
+  };
+
+  const triggerGlitch = () => {
+    const isGlobal = Math.random() < 0.5; // 50% chance of global vs local glitch
+    const selectedError = isGlobal
+      ? getRandomGlobalError()
+      : getRandomLocalError();
+
+    if (isGlobal) {
+      setGlobalGlitchActive(true);
+    } else {
+      setLocalGlitchActive(true);
+    }
+
+    console.log(
+      "Glitch triggered:",
+      selectedError.message,
+      "Impact:",
+      selectedError.impactType
+    );
+    const glitchType = getRandomImpactType(); // Randomly choose "Path", "Grid", or "Score"
+
+    if (glitchType === "Path") {
+      triggerPathGlitch();
+    } else if (glitchType === "Grid") {
+      triggerGridGlitch();
+    } else {
+      triggerScoreGlitch();
+    }
+
+    console.log(`Glitch Activated: ${glitchType}`);
+
+    setTimeout(() => {
+      setGlobalGlitchActive(false);
+      setLocalGlitchActive(false);
+    }, 3000); // Glitch lasts for 3 seconds
+  };
+
+  const triggerPathGlitch = () => {
+    if (path.length === 0) return; // No path to modify
+
+    const randomIndex = Math.floor(Math.random() * path.length);
+    const possibleDirections = ["↑", "↓", "←", "→"].filter(
+      (dir) => dir !== path[randomIndex]
+    ); // Ensure change
+
+    setPath((prevPath) => {
+      const newPath = [...prevPath];
+      newPath[randomIndex] =
+        possibleDirections[
+          Math.floor(Math.random() * possibleDirections.length)
+        ];
+      return newPath;
+    });
+    console.log(`Path Glitch! Changed step }`);
+  };
+
+  const triggerGridGlitch = () => {
+    const { grid, startCol, endCol } = generateGrid(); // Generate fresh grid
+
+    setGrid(grid);
+    setStartCol(startCol);
+    setEndCol(endCol);
+
+    console.log("Grid Glitch! Entire map changed.");
+  };
+
+  const triggerScoreGlitch = () => {
+    setGrid((prevGrid) => {
+      return prevGrid.map((row) =>
+        row.map((cell) => ({
+          ...cell,
+          score:
+            cell.type === "empty"
+              ? [5, 10, 15, 20][Math.floor(Math.random() * 4)]
+              : 0,
+        }))
+      );
+    });
+
+    console.log("Score Glitch! All tile scores randomized.");
+  };
+
   return (
     <div
       style={{
@@ -305,11 +469,46 @@ const App: React.FC = () => {
         color: "#fff",
       }}
     >
+      {globalGlitchActive && (
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            backgroundColor: "#0000AA", // BSOD color
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "#fff",
+            fontSize: "24px",
+            fontWeight: "bold",
+            zIndex: 9999, // Ensures it covers everything
+          }}
+        >
+          💀 ERROR: SYSTEM FAILURE - RESTARTING...
+        </div>
+      )}
+
+      <div>
+        <h1>Avatared</h1>
+      </div>
       {/* LEFT SIDE: Instructions */}
       <div style={{ width: "250px", padding: "10px" }}>
+        <h2>Story</h2>
+        <p>The GLIP Lander has successfull made it to the surface of Venus.</p>
+        <p>... Just not in the right spot.</p>
+        <p>
+          High winds have blown it off course and it has landed in ...
+          undesirable terrain.
+        </p>
         <h2>Instructions</h2>
-        <p>Program the avatar using the arrow buttons.</p>
-        <p>Watch out—something may change...</p>
+        <p>
+          Program the GLIP Lander to navigate the inhospitable terrain to reach
+          its goal.
+        </p>
+        <p>Beware, Venus has powerful electrical storms ...</p>
       </div>
 
       {/* CENTER: Main Game Area */}
@@ -318,16 +517,38 @@ const App: React.FC = () => {
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
+          border: "1px solid #555",
         }}
       >
-        <h1>Avatared</h1>
         <div
           style={{
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
+            position: "relative",
           }}
         >
+          {localGlitchActive && (
+            <div
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "100%",
+                height: "100%",
+                backgroundColor: "rgba(0, 0, 0)", // Blackout effect
+                color: "#fff",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "20px",
+                fontWeight: "bold",
+                zIndex: 999, // Covers only the grid
+              }}
+            >
+              ⚠️ CONNECTION LOST: RETRYING...
+            </div>
+          )}
           {/* Path Display Above the Grid */}
           <div
             style={{
