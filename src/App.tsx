@@ -150,9 +150,17 @@ const App: React.FC = () => {
 
   const modifyPath = (index: number) => {
     setPath((prevPath) => {
-      const newPath = [...prevPath];
-      newPath[index] = "↓"; // Temporary replacement for testing
-      return newPath;
+      const newPath = [...prevPath]; // Ensure a new array reference
+      const possibleDirections = ["↑", "↓", "←", "→"].filter(
+        (dir) => dir !== prevPath[index]
+      );
+
+      newPath[index] =
+        possibleDirections[
+          Math.floor(Math.random() * possibleDirections.length)
+        ];
+
+      return [...newPath]; // Returning a new array forces re-render
     });
   };
 
@@ -460,71 +468,99 @@ const App: React.FC = () => {
     <div
       style={{
         display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        height: "100vh",
-        width: "100vw",
-        padding: "20px",
+        flexDirection: "column",
         backgroundColor: "#111",
         color: "#fff",
+        minHeight: "100vh",
       }}
     >
-      {globalGlitchActive && (
-        <div
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: "100vw",
-            height: "100vh",
-            backgroundColor: "#0000AA", // BSOD color
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "#fff",
-            fontSize: "24px",
-            fontWeight: "bold",
-            zIndex: 9999, // Ensures it covers everything
-          }}
-        >
-          💀 ERROR: SYSTEM FAILURE - RESTARTING...
-        </div>
-      )}
+      {/* Header */}
+      <header
+        style={{
+          width: "100%",
+          textAlign: "center",
+          padding: "24px 0",
+          borderBottom: "1px solid #444",
+        }}
+      >
+        <h1 style={{ fontSize: "2.25rem", fontWeight: "bold" }}>Avatared</h1>
+      </header>
 
-      <div>
-        <h1>Avatared</h1>
-      </div>
-      {/* LEFT SIDE: Instructions */}
-      <div style={{ width: "250px", padding: "10px" }}>
-        <h2>Story</h2>
-        <p>The GLIP Lander has successfull made it to the surface of Venus.</p>
-        <p>... Just not in the right spot.</p>
-        <p>
-          High winds have blown it off course and it has landed in ...
-          undesirable terrain.
-        </p>
-        <h2>Instructions</h2>
-        <p>
-          Program the GLIP Lander to navigate the inhospitable terrain to reach
-          its goal.
-        </p>
-        <p>Beware, Venus has powerful electrical storms ...</p>
-      </div>
-
-      {/* CENTER: Main Game Area */}
+      {/* Main content with 3 columns */}
       <div
         style={{
           display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          border: "1px solid #555",
+          flex: 1,
+          justifyContent: "space-between",
+          padding: "16px",
         }}
       >
+        {/* Global glitch overlay */}
+        {globalGlitchActive && (
+          <div
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: "#0000AA",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#fff",
+              fontSize: "24px",
+              fontWeight: "bold",
+              zIndex: 50,
+            }}
+          >
+            💀 ERROR: SYSTEM FAILURE - RESTARTING...
+          </div>
+        )}
+
+        {/* LEFT SIDE: Instructions */}
+        <div style={{ width: "250px", padding: "16px" }}>
+          <h2
+            style={{
+              fontSize: "1.25rem",
+              fontWeight: "bold",
+              marginBottom: "16px",
+            }}
+          >
+            Story
+          </h2>
+          <p style={{ marginBottom: "8px" }}>
+            The GLIP Lander has successfully made it to the surface of Venus.
+          </p>
+          <p style={{ marginBottom: "8px" }}>... Just not in the right spot.</p>
+          <p style={{ marginBottom: "16px" }}>
+            High winds have blown it off course and it has landed in ...
+            undesirable terrain.
+          </p>
+          <h2
+            style={{
+              fontSize: "1.25rem",
+              fontWeight: "bold",
+              marginBottom: "16px",
+            }}
+          >
+            Instructions
+          </h2>
+          <p style={{ marginBottom: "8px" }}>
+            Program the GLIP Lander to navigate the inhospitable terrain to
+            reach its goal.
+          </p>
+          <p>Beware, Venus has powerful electrical storms ...</p>
+        </div>
+
+        {/* CENTER: Main Game Area */}
         <div
           style={{
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
+            border: "1px solid #555",
+            padding: "16px",
             position: "relative",
           }}
         >
@@ -534,34 +570,35 @@ const App: React.FC = () => {
                 position: "absolute",
                 top: 0,
                 left: 0,
-                width: "100%",
-                height: "100%",
-                backgroundColor: "rgba(0, 0, 0)", // Blackout effect
-                color: "#fff",
+                right: 0,
+                bottom: 0,
+                backgroundColor: "rgba(0, 0, 0, 1)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
+                color: "#fff",
                 fontSize: "20px",
                 fontWeight: "bold",
-                zIndex: 999, // Covers only the grid
+                zIndex: 40,
               }}
             >
               ⚠️ CONNECTION LOST: RETRYING...
             </div>
           )}
+
           {/* Path Display Above the Grid */}
           <div
             style={{
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              marginBottom: "20px",
+              marginBottom: "16px",
             }}
           >
             {generatePathRows().map((row, rowIndex) => (
               <div
                 key={rowIndex}
-                style={{ display: "flex", gap: "5px", marginBottom: "5px" }}
+                style={{ display: "flex", gap: "4px", marginBottom: "4px" }}
               >
                 {row.map((direction, index) => (
                   <PathBox
@@ -574,23 +611,33 @@ const App: React.FC = () => {
               </div>
             ))}
           </div>
+
           <Grid
             grid={grid}
             gridSize={GRID_SIZE}
             playerPosition={playerPosition}
           />
+
           <Controls onMove={addToPath} />
           <ExecuteButton onExecute={executePath} />
         </div>
-      </div>
 
-      {/* RIGHT SIDE: Status Updates */}
-      <div style={{ width: "250px", padding: "10px" }}>
-        <h2>Status</h2>
-        <p>Current Score: {score}</p>
-        <p>Current Steps: {path.length}</p>
-        <p>Path Index: {currentPathIndex}</p>
-        <p>Debug: {debugInfo}</p>
+        {/* RIGHT SIDE: Status Updates */}
+        <div style={{ width: "250px", padding: "16px" }}>
+          <h2
+            style={{
+              fontSize: "1.25rem",
+              fontWeight: "bold",
+              marginBottom: "16px",
+            }}
+          >
+            Status
+          </h2>
+          <p style={{ marginBottom: "8px" }}>Current Score: {score}</p>
+          <p style={{ marginBottom: "8px" }}>Current Steps: {path.length}</p>
+          <p style={{ marginBottom: "8px" }}>Path Index: {currentPathIndex}</p>
+          <p>Debug: {debugInfo}</p>
+        </div>
       </div>
     </div>
   );
