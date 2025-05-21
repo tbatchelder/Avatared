@@ -9,12 +9,12 @@ interface PathBoxProps {
 
 const PathBox: React.FC<PathBoxProps> = ({
   direction = "→",
-  index = 0,
+
   onModify,
 }) => {
   return (
     <div className="path-box" onClick={() => onModify?.()}>
-      {index}: {direction} {/* Displays debugging */}
+      {direction} {/* Displays debugging */}
     </div>
   );
 };
