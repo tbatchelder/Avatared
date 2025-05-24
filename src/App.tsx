@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import React from "react";
 import Grid from "./components/Grid";
 import type { Tile } from "./components/Grid";
@@ -22,7 +22,7 @@ const App: React.FC = () => {
     col: number;
   } | null>(null);
   const [isExecuting, setIsExecuting] = useState<boolean>(false);
-  const [currentPathIndex, setCurrentPathIndex] = useState<number>(0);
+  // const [currentPathIndex, setCurrentPathIndex] = useState<number>(0);
   const executionTimerRef = useRef<number | null>(null);
   const [score, setScore] = useState(0);
   const [globalGlitchActive, setGlobalGlitchActive] = useState(false);
@@ -33,49 +33,22 @@ const App: React.FC = () => {
   // const [debugInfo, setDebugInfo] = useState<string>("");
 
   // Calculate current grid size based on level
-  const getCurrentGridSize = () => {
+  const getCurrentGridSize = useCallback(() => {
     return Math.min(MIN_GRID_SIZE + (level - 1), MAX_GRID_SIZE);
-  };
-
-  // Calculate obstacle count based on level
-  const getObstacleCount = (gridSize: number) => {
-    const totalTiles = gridSize * gridSize;
-    const obstaclePercent =
-      BASE_OBSTACLE_PERCENT + (level - 1) * OBSTACLE_PERCENT_INCREMENT;
-    return Math.floor((totalTiles - 2) * (obstaclePercent / 100)); // Subtract 2 for start and end tiles
-  };
-
-  // Calculate glitch multiplier based on level
-  const getGlitchMultiplier = () => {
-    return Math.pow(2, level - 1); // Double for each level: 1, 2, 4, 8, 16, etc.
-  };
-
-  // Generate grid based on current level
-  useEffect(() => {
-    const { grid, startCol, endCol } = generateGrid();
-    setGrid(grid);
-    setStartCol(startCol);
-    setEndCol(endCol);
   }, [level]);
 
-  // Set initial player position when grid is generated
-  useEffect(() => {
-    if (grid.length > 0) {
-      const gridSize = getCurrentGridSize();
-      setPlayerPosition({ row: gridSize - 1, col: startCol });
-    }
-  }, [grid, startCol]);
+  // Calculate obstacle count based on level
+  const getObstacleCount = useCallback(
+    (gridSize: number) => {
+      const totalTiles = gridSize * gridSize;
+      const obstaclePercent =
+        BASE_OBSTACLE_PERCENT + (level - 1) * OBSTACLE_PERCENT_INCREMENT;
+      return Math.floor((totalTiles - 2) * (obstaclePercent / 100));
+    },
+    [level]
+  );
 
-  // Cleanup timer on unmount
-  useEffect(() => {
-    return () => {
-      if (executionTimerRef.current !== null) {
-        window.clearTimeout(executionTimerRef.current);
-      }
-    };
-  }, []);
-
-  const generateGrid = () => {
+  const generateGrid = useCallback(() => {
     const gridSize = getCurrentGridSize();
     const grid: Tile[][] = Array(gridSize)
       .fill(null)
@@ -162,7 +135,40 @@ const App: React.FC = () => {
     }
 
     return { grid, startCol, endCol };
+  }, [getCurrentGridSize, getObstacleCount]);
+
+  // Calculate glitch multiplier based on level
+  const getGlitchMultiplier = () => {
+    return Math.pow(2, level - 1); // Double for each level: 1, 2, 4, 8, 16, etc.
   };
+
+  // Generate grid based on current level
+  useEffect(() => {
+    const { grid, startCol, endCol } = generateGrid();
+    setGrid(grid);
+    setStartCol(startCol);
+    setEndCol(endCol);
+  }, [level, generateGrid]);
+
+  // Set initial player position when grid is generated
+  useEffect(() => {
+    if (grid.length > 0) {
+      const getCurrentGridSize = () => {
+        return Math.min(MIN_GRID_SIZE + (level - 1), MAX_GRID_SIZE);
+      };
+      const gridSize = getCurrentGridSize();
+      setPlayerPosition({ row: gridSize - 1, col: startCol });
+    }
+  }, [grid, startCol, level]);
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (executionTimerRef.current !== null) {
+        window.clearTimeout(executionTimerRef.current);
+      }
+    };
+  }, []);
 
   const MAX_PER_ROW = 10;
 
@@ -213,7 +219,7 @@ const App: React.FC = () => {
     // Reset player position to start and path index
     const gridSize = getCurrentGridSize();
     setPlayerPosition({ row: gridSize - 1, col: startCol });
-    setCurrentPathIndex(0);
+    // setCurrentPathIndex(0);
     setIsExecuting(true);
 
     // Create a copy of the grid without any existing path markers
@@ -319,7 +325,7 @@ const App: React.FC = () => {
     // Update the grid and player position in state
     setGrid(newGrid);
     setPlayerPosition(newPosition);
-    setCurrentPathIndex(stepIndex);
+    // setCurrentPathIndex(stepIndex);
 
     // Check if reached the end
     if (newRow === 0 && newCol === endCol) {
@@ -530,7 +536,7 @@ const App: React.FC = () => {
     setScore(0);
     setGlitchProbability(Math.random() * 25);
     setIsExecuting(false);
-    setCurrentPathIndex(0);
+    // setCurrentPathIndex(0);
     if (executionTimerRef.current !== null) {
       window.clearTimeout(executionTimerRef.current);
     }
@@ -810,6 +816,23 @@ const App: React.FC = () => {
           </button>
         </div>
       </div>
+      {/* Footer */}
+      <footer
+        style={{
+          width: "100%",
+          textAlign: "center",
+          padding: "12px 0",
+          borderBottom: "1px solid #444",
+        }}
+      >
+        <h4
+          style={{
+            fontWeight: "bold",
+          }}
+        >
+          Created by: Timothy Batchelder
+        </h4>
+      </footer>
     </div>
   );
 };
